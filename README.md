@@ -18,7 +18,7 @@ Also available: <a href="https://www.tindie.com/products/Spacehuhn/spacehuhn-sti
 ## What is New
 
 @urmel79 (2020-04-16):
-- forked official @spacehuhn's repository in my own github folder
+- forked official @spacehuhn's repository to my own github folder
 - connected a BME280 sensor (temperature, humidity, pressure and altitude) to the external I2C pins
 - added functionality of reading the BME280 sensor
 - sensor readings are shown in its own display menu entry and screen
