@@ -8,6 +8,7 @@
 #include "SSIDs.h"
 #include "Scan.h"
 #include "Attack.h"
+#include "sensor_bme280.h"
 
 #include <SimpleButton.h>
 
@@ -29,9 +30,9 @@ extern String right(String a, int len);
 extern String leftRight(String a, String b, int len);
 extern String replaceUtf8(String str, String r);
 
-const char D_INTRO_0[] PROGMEM = "";
-const char D_INTRO_1[] PROGMEM = "ESP8266 Deauther";
-const char D_INTRO_2[] PROGMEM = "by @Spacehuhn";
+const char D_INTRO_0[] PROGMEM = " ESP8266 Deauther";
+const char D_INTRO_1[] PROGMEM = "by @Spacehuhn";
+const char D_INTRO_2[] PROGMEM = "& Bjoern @urmel79";
 const char D_INTRO_3[] PROGMEM = "";
 
 // fallback for the buttons
@@ -66,7 +67,7 @@ struct Menu {
 
 class DisplayUI {
     public:
-        enum DISPLAY_MODE { OFF = 0, BUTTON_TEST = 1, MENU = 2, LOADSCAN = 3, PACKETMONITOR = 4, INTRO = 5, CLOCK = 6 };
+        enum DISPLAY_MODE { OFF = 0, BUTTON_TEST = 1, MENU = 2, LOADSCAN = 3, PACKETMONITOR = 4, INTRO = 5, CLOCK = 6, BME280 = 7 };
 
         uint8_t mode      = DISPLAY_MODE::MENU;
         bool highlightLED = false;
@@ -84,7 +85,7 @@ class DisplayUI {
         const uint8_t buttonDelay      = 250;
         const uint8_t drawInterval     = 100; // 100ms = 10 FPS
         const uint16_t scrollSpeed     = 500; // time interval in ms
-        const uint16_t screenIntroTime = 2500;
+        const uint16_t screenIntroTime = 5000; // 2500
         const uint16_t screenWidth = 128;
         const uint16_t sreenHeight = 64;
 
@@ -145,6 +146,14 @@ class DisplayUI {
         Menu stationMenu;
         Menu nameMenu;
         Menu ssidMenu;
+        
+        // BME280 sensor
+        sensor_bme280 bme280;
+        int g_i_interval_counter = 0;
+        double g_d_bme280_temperature;
+        double g_d_bme280_humidity;
+        double g_d_bme280_pressure;
+        int g_i_bme280_altitude;
 
         void setupButtons();
 
@@ -173,6 +182,9 @@ class DisplayUI {
         // fake clock
         void drawClock();
         void setTime(int h, int m, int s);
+
+        // BME280 sensor
+        void drawBME280();
 
         int clockHour   = 6;
         int clockMinute = 0;

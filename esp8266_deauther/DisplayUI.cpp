@@ -4,6 +4,8 @@
 void DisplayUI::configInit() {
     // initialize display
     display.init();
+    
+    bme280.connectBME280iic();
 
     /*
        In case of a compiler (conversion char/uint8_t) error,
@@ -78,7 +80,7 @@ void DisplayUI::setup() {
             mode = DISPLAY_MODE::PACKETMONITOR;
         });
         
-        addMenuNode(&mainMenu, D_CLOCK, [this]() { // PACKET MONITOR
+        addMenuNode(&mainMenu, D_CLOCK, [this]() { // CLOCK
             mode = DISPLAY_MODE::CLOCK;
             display.setFont(ArialMT_Plain_24);
             display.setTextAlignment(TEXT_ALIGN_CENTER);
@@ -90,6 +92,13 @@ void DisplayUI::setup() {
             digitalWrite(HIGHLIGHT_LED, highlightLED);
         });
 #endif // ifdef HIGHLIGHT_LED
+
+        addMenuNode(&mainMenu, D_BME280, [this]() { // BME280 sensor
+            mode = DISPLAY_MODE::BME280;
+            display.setFont(ArialMT_Plain_10);
+            display.setTextAlignment(TEXT_ALIGN_LEFT);
+        });
+
     });
 
     // SCAN MENU
@@ -595,6 +604,12 @@ void DisplayUI::setupButtons() {
                 display.setFont(DejaVu_Sans_Mono_12);
                 display.setTextAlignment(TEXT_ALIGN_LEFT);
                 break;
+            
+            case DISPLAY_MODE::BME280:
+                mode = DISPLAY_MODE::MENU;
+                display.setFont(DejaVu_Sans_Mono_12);
+                display.setTextAlignment(TEXT_ALIGN_LEFT);
+                break;
             }
         }
     });
@@ -630,6 +645,12 @@ void DisplayUI::setupButtons() {
                 break;
 
             case DISPLAY_MODE::CLOCK:
+                mode = DISPLAY_MODE::MENU;
+                display.setFont(DejaVu_Sans_Mono_12);
+                display.setTextAlignment(TEXT_ALIGN_LEFT);
+                break;
+            
+            case DISPLAY_MODE::BME280:
                 mode = DISPLAY_MODE::MENU;
                 display.setFont(DejaVu_Sans_Mono_12);
                 display.setTextAlignment(TEXT_ALIGN_LEFT);
@@ -682,6 +703,9 @@ void DisplayUI::draw() {
             break;
         case DISPLAY_MODE::CLOCK:
             drawClock();
+            break;
+        case DISPLAY_MODE::BME280:
+            drawBME280();
             break;
         }
 
@@ -787,6 +811,42 @@ void DisplayUI::drawClock() {
     clockTime += String(clockMinute);
 
     display.drawString(64, 20, clockTime);
+}
+
+void DisplayUI::drawBME280() {
+    g_i_interval_counter++;
+    
+    if (g_i_interval_counter >= 20) {   // 20: ca. 2 s
+        g_i_interval_counter = 0;
+
+        g_d_bme280_temperature = bme280.get_temperature();
+        g_d_bme280_humidity = bme280.get_humidity();
+        g_d_bme280_pressure = bme280.get_pressure();
+        g_i_bme280_altitude = bme280.get_altitude();
+        
+        Serial.print(g_d_bme280_temperature, 2);
+        Serial.print(" °C, ");
+        Serial.print(g_d_bme280_humidity, 1);
+        Serial.print(" % rF, ");
+        Serial.print(g_d_bme280_pressure, 1);
+        Serial.print(" hPa, ");
+        Serial.print(g_i_bme280_altitude);
+        Serial.println(" m");
+    }
+    
+    // display static text (header)
+    display.setTextAlignment(TEXT_ALIGN_CENTER);
+    display.drawString(64,0,"Sensor BME280");
+    // Draw a line horizontally
+    display.drawHorizontalLine(0, 12, 128);
+
+    display.setTextAlignment(TEXT_ALIGN_LEFT);
+    
+    display.drawString(0,15,"Temperature: " + String(g_d_bme280_temperature) + " °C");
+    display.drawString(0,25,"Humidity:        " + String(g_d_bme280_humidity) + " % rF");
+    display.drawString(0,35,"Pressure:       " + String(g_d_bme280_pressure) + " hPa");
+    display.drawString(0,45,"Altitude DRS:  " + String(g_i_bme280_altitude) + " m");    // for NN pressure of Dresden
+    // display.drawString(0,45,"Altitude LPZ:  " + String(g_i_bme280_altitude) + " m");    // for NN pressure of Leipzig
 }
 
 void DisplayUI::clearMenu(Menu* menu) {
